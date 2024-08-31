@@ -1,7 +1,7 @@
 use chrono::{Date, DateTime, Utc};
 use egui::{vec2, Sense, Separator, Shadow, Ui, Vec2};
 
-#[derive(PartialEq, Debug, Default, Clone)]
+#[derive(PartialEq, Debug, Default, Clone, PartialOrd)]
 enum TaskPriority {
     #[default]
     Low,
@@ -24,60 +24,28 @@ pub struct Task {
 pub struct Todolist {
     tasks: Vec<Task>,
     pub new_task: Task,
-    errors: Vec<&'static str>
+    errors: Vec<&'static str>,
+    pub sort_by: String,
 }
 
 impl Todolist {
     pub fn new(cc: &eframe::CreationContext<'_>) -> Self {
-        Self::default()
+        Default::default() 
     }
 
-    pub fn render_tasks(&self, ui: &mut Ui, ctx: &eframe::egui::Context){
-        for task in self.tasks.iter(){
-            self.render_task(ui, ctx, task);
+    pub fn render_tasks(&mut self, ui: &mut Ui, ctx: &eframe::egui::Context){
+        if self.sort_by == "Priority" {
+            self.tasks.sort_by(|a, b| {b.priority.partial_cmp(&a.priority).unwrap()});
         }
-    }
-
-    pub fn render_task(&self, ui: &mut Ui, ctx: &eframe::egui::Context, task: &Task) {
-        let mut shadow = Shadow::default();
-        shadow.offset = vec2(0.0, 20.0);
-        shadow.color = egui::Color32::from_hex("#00000022").unwrap();
-        shadow.blur = 20.0;
-        egui::Frame::default()
-            .inner_margin(8.0)
-            .stroke((0.5, egui::Color32::WHITE))
-            .shadow(shadow)
-            .show(ui, |ui| {
-                ui.with_layout(egui::Layout::left_to_right(egui::Align::TOP), |ui| {
-                    ui.label(&task.title);
-                    ui.with_layout(egui::Layout::right_to_left(egui::Align::TOP), |ui| {
-                        match task.priority {
-                            TaskPriority::Low => ui.add(
-                                egui::Image::new(egui::include_image!("../assets/low_priority.png"))
-                                    .max_width(20.0)
-                                    .rounding(10.0),
-                            ),
-                            TaskPriority::Medium => ui.add(
-                                egui::Image::new(egui::include_image!("../assets/medium_priority.png"))
-                                    .max_width(20.0)
-                                    .rounding(10.0),
-                            ),
-                            TaskPriority::High => ui.add(
-                                egui::Image::new(egui::include_image!("../assets/high_priority.png"))
-                                    .max_width(20.0)
-                                    .rounding(10.0),
-                            ),
-                        };
-                        
-                        ui.label(format!("Deadline: {}", &task.deadline));
-                    });
-                });
-                ui.label(&task.description);
-                ui.with_layout(egui::Layout::right_to_left(egui::Align::TOP), |ui| {
-                    let mark_done = ui.button("Mark as done");
-                    let delete_task = ui.button("Delete task");
-                });
-            });
+        else if self.sort_by == "Deadline" {
+            self.tasks.sort_by(|a, b| {a.deadline.partial_cmp(&b.deadline).unwrap()});
+        }
+        for task in self.tasks.iter_mut(){
+            if !task.done {
+                render_task(ui, ctx, task);
+                ui.add_space(10.);
+            }
+        }
     }
 
     pub fn render_modal(&mut self, modal: &egui_modal::Modal, ctx: &egui::Context){
@@ -128,7 +96,7 @@ impl Todolist {
 
 fn check_new_task (new_task: &mut Task, errors: &mut Vec<&'static str>) {
     errors.clear();
-
+    let pp = |x: i32, y: i32| {x + y};
     if new_task.title.is_empty(){
         errors.push("Task title should be specified.");
     }
@@ -146,3 +114,49 @@ fn check_new_task (new_task: &mut Task, errors: &mut Vec<&'static str>) {
     }
 }
 
+fn render_task(ui: &mut Ui, ctx: &eframe::egui::Context, task: &mut Task) {
+    let mut shadow = Shadow::default();
+    shadow.offset = vec2(0.0, 20.0);
+    shadow.color = egui::Color32::from_hex("#00000022").unwrap();
+    shadow.blur = 20.0;
+    egui::Frame::default()
+        .inner_margin(8.0)
+        .stroke((0.5, egui::Color32::WHITE))
+        .shadow(shadow)
+        .show(ui, |ui| {
+            ui.with_layout(egui::Layout::left_to_right(egui::Align::TOP), |ui| {
+                ui.label(&task.title);
+                ui.with_layout(egui::Layout::right_to_left(egui::Align::TOP), |ui| {
+                    match task.priority {
+                        TaskPriority::Low => ui.add(
+                            egui::Image::new(egui::include_image!("../assets/low_priority.png"))
+                                .max_width(20.0)
+                                .rounding(10.0),
+                        ),
+                        TaskPriority::Medium => ui.add(
+                            egui::Image::new(egui::include_image!("../assets/medium_priority.png"))
+                                .max_width(20.0)
+                                .rounding(10.0),
+                        ),
+                        TaskPriority::High => ui.add(
+                            egui::Image::new(egui::include_image!("../assets/high_priority.png"))
+                                .max_width(20.0)
+                                .rounding(10.0),
+                        ),
+                    };
+                    
+                    ui.label(format!("Deadline: {}", &task.deadline));
+                });
+            });
+            ui.label(&task.description);
+            ui.with_layout(egui::Layout::right_to_left(egui::Align::TOP), |ui| {
+                let mark_done = ui.button("Mark as done");
+                // TODO: incorporate Delete task button. 
+                // let delete_task = ui.button("Delete task");
+
+                if mark_done.clicked() {
+                    task.done = true;
+                }
+            });
+        });
+}

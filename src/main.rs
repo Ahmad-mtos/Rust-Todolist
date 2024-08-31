@@ -8,7 +8,7 @@ mod todolist;
 impl App for todolist::Todolist{
     fn update(&mut self, ctx: &eframe::egui::Context, frame: &mut eframe::Frame) {
         egui::CentralPanel::default().show(ctx, |ui| {
-            render_header(ui);
+            render_header(ui, &mut self.sort_by);
             egui::ScrollArea::vertical().show(ui, |ui| {
                 self.render_tasks(ui, ctx);
                 ui.add_space(80.);
@@ -18,11 +18,21 @@ impl App for todolist::Todolist{
     }
 }
 
-fn render_header(ui: &mut Ui){
+fn render_header(ui: &mut Ui, sorter: &mut String){
     ui.vertical_centered(|ui| {
         ui.heading("Todolist");
     });
     ui.add_space(20.0);
+    ui.with_layout(egui::Layout::right_to_left(egui::Align::TOP), |ui| {
+        egui::ComboBox::from_id_source("sorter")
+            .selected_text(format!("{}", sorter))
+            .show_ui(ui, |ui| {
+                ui.selectable_value(sorter, "Priority".to_string(), "Priority");
+                ui.selectable_value(sorter, "Deadline".to_string(), "Deadline");
+            });
+        ui.label("Sort by: ");
+    });
+
     ui.add(Separator::default().spacing(20.0));
 }
 
