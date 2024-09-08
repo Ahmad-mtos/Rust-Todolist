@@ -1,5 +1,6 @@
 use chrono::{Date, DateTime, Utc};
 use egui::{vec2, Sense, Separator, Shadow, Ui, Vec2};
+use todolist::db;
 
 #[derive(PartialEq, Debug, Default, Clone, PartialOrd)]
 enum TaskPriority {
@@ -30,7 +31,31 @@ pub struct Todolist {
 
 impl Todolist {
     pub fn new(cc: &eframe::CreationContext<'_>) -> Self {
-        Default::default() 
+        Self{
+            tasks: Todolist::fetch_tasks(),
+            ..Default::default()
+        }
+    }
+
+    pub fn fetch_tasks() -> Vec<Task> {
+        let query_tasks = db::fetch_all(&mut db::establish_connection());
+        query_tasks.iter().map(|task| {
+            let date = format!("20{}:00 UTC", task.deadline);
+            let deadline = date.parse::<DateTime<Utc>>().unwrap(); 
+            Task{
+                id: task.id,
+                done: task.done,
+                title: task.title.clone(),
+                description: task.description.clone(),
+                deadline,
+                deadline_string : task.deadline.clone(),
+                priority: match task.priority {
+                    1 => TaskPriority::Low,
+                    2 => TaskPriority::Medium,
+                    _ => TaskPriority::High
+                }
+            }
+        }).collect()
     }
 
     pub fn render_tasks(&mut self, ui: &mut Ui, ctx: &eframe::egui::Context){
