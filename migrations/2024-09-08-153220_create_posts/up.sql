@@ -1,0 +1,9 @@
+-- Your SQL goes here
+CREATE TABLE tasks (
+    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, 
+    title VARCHAR NOT NULL,
+    description TEXT NOT NULL,
+    deadline TEXT NOT NULL,
+    priority INTEGER NOT NULL DEFAULT 1, 
+    done BOOLEAN NOT NULL DEFAULT 0
+)

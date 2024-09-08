@@ -9,3 +9,9 @@ eframe = "0.28.1"
 egui = "0.28.1"
 egui-modal = "0.4.0"
 egui_extras = { version = "0.28.1", features = ["default", "all_loaders", "chrono"] }
+diesel = { version = "2.2.0", features = ["sqlite", "returning_clauses_for_sqlite_3_35"] }
+# build libsqlite3 as part of the build process
+# uncomment this line if you run into setup issues
+libsqlite3-sys = { version = "0.30", features = ["bundled"] }
+dotenvy = "0.15"
+diesel_cli = "2.2.4"
