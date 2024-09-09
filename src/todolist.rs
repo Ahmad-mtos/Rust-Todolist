@@ -6,7 +6,7 @@ use todolist::db;
 #[derive(PartialEq, Debug, Default, Clone, PartialOrd)]
 enum TaskPriority {
     #[default]
-    Low,
+    Low = 1,
     Medium,
     High
 }
