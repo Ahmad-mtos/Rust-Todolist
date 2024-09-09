@@ -14,4 +14,3 @@ diesel = { version = "2.2.0", features = ["sqlite", "returning_clauses_for_sqlit
 # uncomment this line if you run into setup issues
 libsqlite3-sys = { version = "0.30", features = ["bundled"] }
 dotenvy = "0.15"
-diesel_cli = "2.2.4"

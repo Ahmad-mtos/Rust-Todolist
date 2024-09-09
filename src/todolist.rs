@@ -1,6 +1,6 @@
-use chrono::{Date, DateTime, Utc};
-use diesel::{connection, SqliteConnection};
-use egui::{vec2, Sense, Separator, Shadow, Ui, Vec2};
+use chrono::{DateTime, Utc};
+use diesel::SqliteConnection;
+use egui::{vec2, Ui};
 use todolist::db;
 
 #[derive(PartialEq, Debug, Default, Clone, PartialOrd)]
@@ -31,7 +31,7 @@ pub struct Todolist {
 }
 
 impl Todolist {
-    pub fn new(cc: &eframe::CreationContext<'_>) -> Self {
+    pub fn new(_cc: &eframe::CreationContext<'_>) -> Self {
         Self{
             tasks: Todolist::fetch_tasks(),
             new_task: Task::default(),
@@ -62,7 +62,7 @@ impl Todolist {
         }).collect()
     }
 
-    pub fn render_tasks(&mut self, ui: &mut Ui, ctx: &eframe::egui::Context){
+    pub fn render_tasks(&mut self, ui: &mut Ui){
         if self.sort_by == "Priority" {
             self.tasks.sort_by(|a, b| {b.priority.partial_cmp(&a.priority).unwrap()});
         }
@@ -71,20 +71,20 @@ impl Todolist {
         }
         for task in self.tasks.iter_mut(){
             if !task.done {
-                render_task(ui, ctx, task, &mut self.connection);
+                render_task(ui, task, &mut self.connection);
                 ui.add_space(10.);
             }
         }
     }
 
-    pub fn render_modal(&mut self, modal: &egui_modal::Modal, ctx: &egui::Context){
+    pub fn render_modal(&mut self, modal: &egui_modal::Modal){
         modal.show(|ui| {
         ui.label("Task Title:");
         ui.add(egui::TextEdit::singleline(&mut self.new_task.title));
         ui.label("Task Description:");
         ui.add_sized(vec2(300.,200.), egui::TextEdit::multiline(&mut self.new_task.description));
         ui.label("Priority:");
-        let mut priority = &mut self.new_task.priority;
+        let priority = &mut self.new_task.priority;
         egui::ComboBox::from_id_source("priority")
             .selected_text(format!("{:?}", priority))
             .show_ui(ui, |ui| {
@@ -143,7 +143,6 @@ fn try_insert_task (task: &Task, connection: &mut SqliteConnection) -> bool {
 
 fn check_new_task (new_task: &mut Task, errors: &mut Vec<&'static str>) {
     errors.clear();
-    let pp = |x: i32, y: i32| {x + y};
     if new_task.title.is_empty(){
         errors.push("Task title should be specified.");
     }
@@ -161,11 +160,13 @@ fn check_new_task (new_task: &mut Task, errors: &mut Vec<&'static str>) {
     }
 }
 
-fn render_task(ui: &mut Ui, ctx: &eframe::egui::Context, task: &mut Task, connection: &mut SqliteConnection) {
-    let mut shadow = Shadow::default();
-    shadow.offset = vec2(0.0, 20.0);
-    shadow.color = egui::Color32::from_hex("#00000022").unwrap();
-    shadow.blur = 20.0;
+fn render_task(ui: &mut Ui, task: &mut Task, connection: &mut SqliteConnection) {
+    let shadow = egui::Shadow { 
+        offset: vec2(0.0, 20.0), 
+        color: egui::Color32::from_hex("#00000022").unwrap(), 
+        blur: 20.0, 
+        ..Default::default() 
+    };
     egui::Frame::default()
         .inner_margin(8.0)
         .stroke((0.5, egui::Color32::WHITE))
@@ -201,10 +202,8 @@ fn render_task(ui: &mut Ui, ctx: &eframe::egui::Context, task: &mut Task, connec
                 // TODO: incorporate Delete task button. 
                 // let delete_task = ui.button("Delete task");
 
-                if mark_done.clicked() {
-                    if db::set_task_done(connection, task.id) {
-                        task.done = true;
-                    }
+                if mark_done.clicked() && db::set_task_done(connection, task.id) {
+                    task.done = true;
                 }
             });
         });

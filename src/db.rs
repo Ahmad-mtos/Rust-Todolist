@@ -12,11 +12,10 @@ pub fn establish_connection() -> SqliteConnection {
 }
 
 pub fn fetch_all(connection: &mut SqliteConnection) -> Vec<QueryTask> {
-    let results = tasks::table
-        .select(QueryTask::as_select())
-        .load(connection)
-        .expect("Error loading table");
-    return results;
+    tasks::table
+    .select(QueryTask::as_select())
+    .load(connection)
+    .expect("Error loading table")
 }
 
 pub fn add_task(connection: &mut SqliteConnection, new_task: QueryTask) -> bool {

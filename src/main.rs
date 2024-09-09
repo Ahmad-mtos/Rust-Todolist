@@ -1,17 +1,17 @@
-use egui::{ScrollArea, TextStyle::*, TopBottomPanel};
+use egui::{TextStyle::*, TopBottomPanel};
 use eframe::{run_native, App, NativeOptions};
-use egui::{vec2, FontDefinitions, FontFamily, Label, Separator, Ui};
+use egui::{vec2, FontDefinitions, FontFamily, Separator, Ui};
 
 use egui::FontId;
 mod todolist;
 
 
 impl App for todolist::Todolist{
-    fn update(&mut self, ctx: &eframe::egui::Context, frame: &mut eframe::Frame) {
+    fn update(&mut self, ctx: &eframe::egui::Context, _frame: &mut eframe::Frame) {
         egui::CentralPanel::default().show(ctx, |ui| {
             render_header(ui, &mut self.sort_by);
             egui::ScrollArea::vertical().show(ui, |ui| {
-                self.render_tasks(ui, ctx);
+                self.render_tasks(ui);
                 ui.add_space(80.);
             });
             render_footer(ctx, self);
@@ -26,7 +26,7 @@ fn render_header(ui: &mut Ui, sorter: &mut String){
     ui.add_space(20.0);
     ui.with_layout(egui::Layout::right_to_left(egui::Align::TOP), |ui| {
         egui::ComboBox::from_id_source("sorter")
-            .selected_text(format!("{}", sorter))
+            .selected_text(sorter.to_string())
             .show_ui(ui, |ui| {
                 ui.selectable_value(sorter, "Priority".to_string(), "Priority");
                 ui.selectable_value(sorter, "Deadline".to_string(), "Deadline");
@@ -42,7 +42,7 @@ fn render_footer(ctx: &eframe::egui::Context, todolist: &mut todolist::Todolist)
         ui.add_space(20.0); 
         ui.with_layout(egui::Layout::right_to_left(egui::Align::TOP), |ui| {
             let modal = egui_modal::Modal::new(ctx, "task_creation");
-            todolist.render_modal(&modal, ctx);
+            todolist.render_modal(&modal);
             let create_task = ui.button("Create Task");
             if create_task.clicked(){
                 modal.open();
