@@ -20,10 +20,25 @@ pub fn fetch_all(connection: &mut SqliteConnection) -> Vec<QueryTask> {
 }
 
 pub fn add_task(connection: &mut SqliteConnection, new_task: QueryTask) -> bool {
-    if let Err(_) = diesel::insert_into(tasks::table)
-        .values(&new_task)
-        .returning(QueryTask::as_returning())
-        .get_result(connection) {
+    if let Err(e) = diesel::insert_into(tasks::table)
+    .values(&new_task)
+    .returning(QueryTask::as_returning())
+    .get_result(connection) {
+        println!("{:?}", e);
+        false
+    } else {
+        true
+    }
+}
+
+pub fn set_task_done(connection: &mut SqliteConnection, task_id: i32) -> bool {
+    use crate::schema::tasks::dsl::*;
+
+    if let Err(e) = diesel::update(tasks)
+    .filter(id.eq(task_id))
+    .set(done.eq(true))
+    .execute(connection) {
+        println!("{:?}", e);
         false
     } else {
         true

@@ -71,7 +71,7 @@ impl Todolist {
         }
         for task in self.tasks.iter_mut(){
             if !task.done {
-                render_task(ui, ctx, task);
+                render_task(ui, ctx, task, &mut self.connection);
                 ui.add_space(10.);
             }
         }
@@ -103,6 +103,7 @@ impl Todolist {
             ui.with_layout(egui::Layout::right_to_left(egui::Align::TOP), |ui| {
                 let create_button = ui.button("Create");
                 if create_button.clicked(){
+                    self.new_task.id = self.tasks.len() as i32;
                     check_new_task(&mut self.new_task, &mut self.errors);
                     if self.errors.is_empty(){
                         if !try_insert_task(&self.new_task, &mut self.connection){
@@ -160,7 +161,7 @@ fn check_new_task (new_task: &mut Task, errors: &mut Vec<&'static str>) {
     }
 }
 
-fn render_task(ui: &mut Ui, ctx: &eframe::egui::Context, task: &mut Task) {
+fn render_task(ui: &mut Ui, ctx: &eframe::egui::Context, task: &mut Task, connection: &mut SqliteConnection) {
     let mut shadow = Shadow::default();
     shadow.offset = vec2(0.0, 20.0);
     shadow.color = egui::Color32::from_hex("#00000022").unwrap();
@@ -201,7 +202,9 @@ fn render_task(ui: &mut Ui, ctx: &eframe::egui::Context, task: &mut Task) {
                 // let delete_task = ui.button("Delete task");
 
                 if mark_done.clicked() {
-                    task.done = true;
+                    if db::set_task_done(connection, task.id) {
+                        task.done = true;
+                    }
                 }
             });
         });
