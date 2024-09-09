@@ -18,3 +18,14 @@ pub fn fetch_all(connection: &mut SqliteConnection) -> Vec<QueryTask> {
         .expect("Error loading table");
     return results;
 }
+
+pub fn add_task(connection: &mut SqliteConnection, new_task: QueryTask) -> bool {
+    if let Err(_) = diesel::insert_into(tasks::table)
+        .values(&new_task)
+        .returning(QueryTask::as_returning())
+        .get_result(connection) {
+        false
+    } else {
+        true
+    }
+}

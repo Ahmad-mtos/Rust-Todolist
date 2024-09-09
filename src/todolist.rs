@@ -1,4 +1,5 @@
 use chrono::{Date, DateTime, Utc};
+use diesel::{connection, SqliteConnection};
 use egui::{vec2, Sense, Separator, Shadow, Ui, Vec2};
 use todolist::db;
 
@@ -21,19 +22,22 @@ pub struct Task {
     priority: TaskPriority
 }
 
-#[derive(Default)]
 pub struct Todolist {
     tasks: Vec<Task>,
     pub new_task: Task,
     errors: Vec<&'static str>,
     pub sort_by: String,
+    connection: SqliteConnection
 }
 
 impl Todolist {
     pub fn new(cc: &eframe::CreationContext<'_>) -> Self {
         Self{
             tasks: Todolist::fetch_tasks(),
-            ..Default::default()
+            new_task: Task::default(),
+            errors: Vec::default(),
+            sort_by: String::default(),
+            connection: db::establish_connection()
         }
     }
 
@@ -101,10 +105,15 @@ impl Todolist {
                 if create_button.clicked(){
                     check_new_task(&mut self.new_task, &mut self.errors);
                     if self.errors.is_empty(){
-                        self.tasks.push(self.new_task.clone());
-                        self.new_task = Task::default();
-                        println!("{:?}", self.tasks);
-                        modal.close();
+                        if !try_insert_task(&self.new_task, &mut self.connection){
+                            self.errors.push("Error while adding task to database.");
+                        }
+                        else{
+                            self.tasks.push(self.new_task.clone());
+                            self.new_task = Task::default();
+                            println!("{:?}", self.tasks);
+                            modal.close();
+                        }
                     }
                 }
 
@@ -117,6 +126,18 @@ impl Todolist {
         }
     });
 }
+}
+
+fn try_insert_task (task: &Task, connection: &mut SqliteConnection) -> bool {
+    let query_task = todolist::models::QueryTask{
+        id: task.id,
+        title: task.title.clone(),
+        done: task.done,
+        description: task.description.clone(),
+        deadline: task.deadline_string.clone(),
+        priority: task.priority.clone() as i32
+    };
+    db::add_task(connection, query_task)
 }
 
 fn check_new_task (new_task: &mut Task, errors: &mut Vec<&'static str>) {
